@@ -160,23 +160,4 @@ seasons_with_teams.each do |season_with_teams|
     stage != 1 && create_game.call(stage-1, winners)
   end
   create_game.call(schema[:stages_count], teams)
-  # teams
-  #   .map { |team| [team[0], games[0], false, Faker::Number.between(from: 0, to: 20)] }
-  #   .each { |team| CONN.exec('INSERT INTO results (team_id, game_id, succeed, points) VALUES ($1, $2, $3, $4)', team) }
-  #   .sort { |a, b| a.last <=> b.last }
-  #   .last(6)
-  #   .each { |team| CONN.exec('UPDATE results SET succeed=$1 WHERE team_id=$2 AND game_id=$3', [true, team[0], games[0]]) }
-  #   .map { |team| [team[0], games[1], false, Faker::Number.between(from: 0, to: 20)] }
-  #   .each { |team| CONN.exec('INSERT INTO results (team_id, game_id, succeed, points) VALUES ($1, $2, $3, $4)', team) }
-  #   .sort { |a, b| a.last <=> b.last }
-  #   .last(3)
-  #   .each { |team| CONN.exec('UPDATE results SET succeed=$1 WHERE team_id=$2 AND game_id=$3', [true, team[0], games[1]]) }
-  #   .map { |team| [team[0], games[2], false, Faker::Number.between(from: 0, to: 20)] }
-  #   .each { |team| CONN.exec('INSERT INTO results (team_id, game_id, succeed, points) VALUES ($1, $2, $3, $4)', team) }
-  #   .sort { |a, b| a.last <=> b.last }
-  #   .last
-  #   .then do |last|
-  #     CONN.exec('UPDATE results SET succeed=$1 WHERE team_id=$2 AND game_id=$3', [true, last[0], games[2]])
-  #     CONN.exec('UPDATE seasons SET team_winner_id=$1 WHERE season_id=$2', [last[0], season[0]])
-  #   end
 end
