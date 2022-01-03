@@ -48,12 +48,9 @@ leagues.each do |league|
   end
 end
 
-
-
 TOURNAMENT_SCHEMAS = [
   {
     count: 15,
-    games_count: 9,
     stages_count: 4,
     4 => { total: 15, groups: 3, succeed: 3 },
     3 => { total: 9, groups: 3, succeed: 2 },
@@ -62,7 +59,6 @@ TOURNAMENT_SCHEMAS = [
   },
   {
     count: 12,
-    games_count: 9,
     stages_count: 4,
     4 => { total: 12, groups: 3, succeed: 3 },
     3 => { total: 9, groups: 3, succeed: 2 },
@@ -71,7 +67,6 @@ TOURNAMENT_SCHEMAS = [
   },
   {
     count: 9,
-    games_count: 8,
     stages_count: 4,
     4 => { total: 9, groups: 3, succeed: 2 },
     3 => { total: 6, groups: 2, succeed: 2 },
@@ -142,7 +137,6 @@ seasons_with_teams.each do |season_with_teams|
   games = CONN.exec('SELECT game_id FROM games WHERE season_id = $1 ORDER BY stage', [season[0]]).values.map { |game| game[0] }
 
   create_game = ->(stage, teams) do
-    p stage
     winners = []
     games
       .pop(schema[stage][:groups])
