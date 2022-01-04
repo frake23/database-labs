@@ -6,7 +6,7 @@ CONN = PG.connect(
   port: '5432',
   user: 'postgres',
   password: 'postgres',
-  dbname: 'kvn2'
+  dbname: 'kvn3'
 )
 
 # teams table
@@ -29,7 +29,7 @@ generate_team = team_generator
 
 # leagues table
 
-(1..1500).each do |i|
+(1..5000).each do |i|
   name = Faker::Superhero.name + " #{i}"
   address = Faker::Address.full_address
   information = Faker::Lorem.paragraph
@@ -41,7 +41,7 @@ leagues = CONN.exec('SELECT * FROM leagues').values
 # seasons table
 
 leagues.each do |league|
-  first = Faker::Number.between(from: 1960, to: 1975)
+  first = Faker::Number.between(from: 1920, to: 1935)
   (first..2021).each do |year|
     CONN.exec('INSERT INTO seasons (league_id, season_year) VALUES ($1, $2)', [league[0], year])
   end
@@ -125,6 +125,7 @@ end
 
 seasons_with_teams.each do |season_with_teams|
   season = season_with_teams.first
+  p season[0]
   year = Integer(season[2])
   date = Faker::Date.in_date_period(year: year, month: 1)
   teams = season_with_teams.last
@@ -151,11 +152,25 @@ seasons_with_teams.each do |season_with_teams|
         season[0],
         schema[1].merge!({competitions: create_competitions(7)}).to_json
       ])
-    .each { |game| CONN.exec('INSERT INTO games (name, date, season_id, stage_info) VALUES ($1, $2, $3, $4)', game) }
+    .then { |games|
+      values = (0..games.length-1).map do |i|
+        k = i * 4
+        "($#{k + 1}, $#{k + 2}, $#{k + 3}, $#{k + 4})"
+      end.join(', ')
+      CONN.exec("INSERT INTO games (name, date, season_id, stage_info) VALUES #{values}", games.reduce([]) { |arr, a| [*arr, *a] })
+    }
 
   games = CONN.exec("SELECT game_id, stage_info->>'num' as num FROM games WHERE season_id = $1 ORDER BY num", [season[0]]).values.map { |game| game[0] }
 
-  teams.each { |team| CONN.exec('INSERT INTO competitors (team_id, season_id) VALUES ($1, $2)', [team[0], season[0]]) }
+  teams
+    .map{ |team| [team[0], season[0]] }
+    .then do |ts|
+      values = (0..ts.length-1).map do |i|
+        k = i * 2
+        "($#{k + 1}, $#{k + 2})"
+      end.join(', ')
+      CONN.exec("INSERT INTO competitors (team_id, season_id) VALUES #{values}", ts.reduce([]) { |arr, a| [*arr, *a] })
+    end
 
   create_game = ->(stage, teams) do
     winners = []
@@ -169,7 +184,14 @@ seasons_with_teams.each do |season_with_teams|
             points = schema[stage][:competitions].map { |comp| Faker::Number.between(from: 0, to: comp[:max_points]) }
             [team[0], game_id, false, points.sum, "{#{points.join(', ')}}" ]
           end
-          .each { |team| CONN.exec('INSERT INTO results (team_id, game_id, succeed, points, competitions_points) VALUES ($1, $2, $3, $4, $5)', team) }
+          .then do |ts|
+            values = (0..ts.length-1).map do |i|
+              k = i * 5
+              "($#{k + 1}, $#{k + 2}, $#{k + 3}, $#{k + 4}, $#{k + 5})"
+            end.join(', ')
+            CONN.exec("INSERT INTO results (team_id, game_id, succeed, points, competitions_points) VALUES #{values}", ts.reduce([]) { |arr, a| [*arr, *a] })
+            ts
+          end
           .sort { |a, b| a.last <=> b.last }
           .then { |t| stage == 1 ? t.group_by { |a| a.last }.values.last : t.last(schema[stage][:succeed]) }
           .each do |team|
